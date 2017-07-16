@@ -2,45 +2,43 @@ module TransformerSpec exposing (..)
 
 import Expect exposing (Expectation)
 import Test exposing (..)
-import StateData exposing (..)
+import State
 import Transformer
 
 
 suite : Test
 suite =
     describe "The Transformer module"
-        [ describe "Piped 'encode' and 'decode' returns given input"
-            [ test "has no effect on the 'initialState'" <|
+        [ describe "Piped `encode` and `decode` returns given input"
+            [ test "has no effect on the `initialData`" <|
                 \_ ->
-                    StateData.initialState
+                    State.initialData
                         |> pipedTransformer
-                        |> Expect.equal initialState
+                        |> Expect.equal State.initialData
             , test "handles custom data" <|
                 \_ ->
                     let
-                        sampleState =
-                            StateData
-                                "Sample title with specials: !@#$%^&*()_+-=`~[]\\{}|;':\",./<>?"
-                                (IntervalMs 135711)
+                        sampleData =
+                            State.Data "Sample title with specials: !@#$%^&*()_+-=`~[]\\{}|;':\",./<>?"
+                                (State.IntervalMs 135711)
                                 [ "a", "b", "c", "d" ]
                     in
-                        sampleState
+                        sampleData
                             |> pipedTransformer
-                            |> Expect.equal sampleState
+                            |> Expect.equal sampleData
             ]
-        , describe "Method 'encode' produces correct Base64 string" <|
-            [ test "for standard 'initialState' input" <|
+        , describe "Method `encode` produces correct Base64 string" <|
+            [ test "for standard `initialData` input" <|
                 \_ ->
-                    StateData.initialState
+                    State.initialData
                         |> Transformer.encode
                         |> Expect.equal "eyJ0aXRsZSI6IlNhbXBsZSBzaG93J3MgdGl0bGUuLi4iLCJpbnRlcnZhbCI6NzY1NCwicGFnZXMiOlsiaHR0cDovL2VsbS1sYW5nLm9yZy8iLCJodHRwczovL2d1aWRlLmVsbS1sYW5nLm9yZy8iLCJodHRwczovL2dpdGh1Yi5jb20vRG9taW5pa0phbmllYy9DYXJvdXNlbG0iXX0%3D"
-            , test "for custom a 'StateData' sample" <|
+            , test "for custom sample of a state" <|
                 \_ ->
                     let
                         sampleState =
-                            StateData
-                                "This is sample with UTF8: ĄĆĘŁŃÓŚŹŻ 🌍 🌎 🌏 ąćęłńóśźż characters"
-                                (IntervalMs 99166)
+                            State.Data "This is sample with UTF8: ĄĆĘŁŃÓŚŹŻ 🌍 🌎 🌏 ąćęłńóśźż characters"
+                                (State.IntervalMs 99166)
                                 [ "https://arxiv.org/pdf/1606.06565.pdf"
                                 , "https://ocw.mit.edu/high-school/humanities-and-social-sciences/godel-escher-bach/"
                                 , "http://fsharpforfunandprofit.com/"
@@ -55,7 +53,7 @@ suite =
         ]
 
 
-pipedTransformer : StateData -> StateData
+pipedTransformer : State.Data -> State.Data
 pipedTransformer input =
     Transformer.encode input
         |> Transformer.decodeOrInitial

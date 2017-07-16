@@ -6,41 +6,41 @@ import Http
 import List
 import Json.Encode
 import Json.Decode
-import StateData exposing (..)
+import State exposing (..)
 
 
-encode : StateData -> String
-encode state =
+encode : Data -> String
+encode data =
     let
         titleEncoder =
-            state.title
+            data.title
                 |> Json.Encode.string
 
         intervalEncoder =
-            state.interval
+            data.interval
                 |> asMillisecond
                 |> Json.Encode.int
 
         pagesEncoder =
-            List.map Json.Encode.string state.pages
+            List.map Json.Encode.string data.pages
                 |> Json.Encode.list
 
-        stateEncoder =
+        dataEncoder =
             Json.Encode.object
                 [ ( keys.title, titleEncoder )
                 , ( keys.interval, intervalEncoder )
                 , ( keys.pages, pagesEncoder )
                 ]
     in
-        Json.Encode.encode const.indent stateEncoder
+        Json.Encode.encode const.indent dataEncoder
             |> Base64.encode
             |> Http.encodeUri
 
 
-decode : String -> Result String StateData
+decode : String -> Result String Data
 decode input =
     let
-        stateDecoder =
+        dataDecoder =
             let
                 intervalDecoder =
                     Json.Decode.map IntervalMs Json.Decode.int
@@ -54,23 +54,23 @@ decode input =
                 pagesField =
                     (Json.Decode.field keys.pages (Json.Decode.list Json.Decode.string))
             in
-                Json.Decode.map3 StateData titleField intervalField pagesField
+                Json.Decode.map3 Data titleField intervalField pagesField
     in
         input
             |> Http.decodeUri
             |> Result.fromMaybe ("Could not decode, got Nothing from the Http.decodeUri for: '" ++ input ++ "'.")
             |> Result.andThen Base64.decode
-            |> Result.andThen (Json.Decode.decodeString stateDecoder)
+            |> Result.andThen (Json.Decode.decodeString dataDecoder)
 
 
-decodeOrInitial : String -> StateData
+decodeOrInitial : String -> Data
 decodeOrInitial input =
     case (decode input) of
-        Ok state ->
-            state
+        Ok data ->
+            data
 
         Err error ->
-            initialState
+            initialData
                 |> Debug.log error
 
 
