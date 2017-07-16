@@ -2,7 +2,8 @@ module StateData exposing (..)
 
 
 type Interval
-    = IntervalSec Int
+    = IntervalMs Int
+    | IntervalSec Int
 
 
 type alias StateData =
@@ -19,7 +20,7 @@ initialState =
             "Sample show's title..."
 
         defaultInterval =
-            IntervalSec 7
+            IntervalMs 7654
 
         defaultPages =
             [ "http://elm-lang.org/"
@@ -28,3 +29,13 @@ initialState =
             ]
     in
         StateData defaultTitle defaultInterval defaultPages
+
+
+asMillisecond : Interval -> Int
+asMillisecond interval =
+    case interval of
+        IntervalMs val ->
+            val
+
+        IntervalSec val ->
+            1000 * val

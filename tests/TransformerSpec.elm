@@ -1,7 +1,6 @@
 module TransformerSpec exposing (..)
 
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, list, int, string)
 import Test exposing (..)
 import StateData exposing (..)
 import Transformer exposing (..)
@@ -23,7 +22,7 @@ suite =
                             "Sample title with specials: !@#$%^&*()_+-=`~[]\\{}|;':\",./<>?"
 
                         sampleState =
-                            StateData sampleTitle (IntervalSec 13) [ "a", "b", "c", "d" ]
+                            StateData sampleTitle (IntervalMs 135711) [ "a", "b", "c", "d" ]
                     in
                         sampleState
                             |> pipedTransformer
@@ -35,4 +34,4 @@ suite =
 pipedTransformer : StateData -> StateData
 pipedTransformer input =
     Transformer.encode input
-        |> Transformer.decode
+        |> Transformer.decodeOrInitial
