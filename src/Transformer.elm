@@ -1,8 +1,11 @@
 module Transformer exposing (encode, decode, decodeOrInitial)
 
-import List exposing (..)
-import Json.Encode as JsonEncode exposing (..)
-import Json.Decode as JsonDecode exposing (..)
+import Base64
+import Debug
+import Http
+import List
+import Json.Encode
+import Json.Decode
 import StateData exposing (..)
 
 
@@ -11,25 +14,27 @@ encode state =
     let
         titleEncoder =
             state.title
-                |> JsonEncode.string
+                |> Json.Encode.string
 
         intervalEncoder =
             state.interval
                 |> asMillisecond
-                |> JsonEncode.int
+                |> Json.Encode.int
 
         pagesEncoder =
-            List.map JsonEncode.string state.pages
-                |> JsonEncode.list
+            List.map Json.Encode.string state.pages
+                |> Json.Encode.list
 
         stateEncoder =
-            JsonEncode.object
+            Json.Encode.object
                 [ ( keys.title, titleEncoder )
                 , ( keys.interval, intervalEncoder )
                 , ( keys.pages, pagesEncoder )
                 ]
     in
-        JsonEncode.encode const.indent stateEncoder
+        Json.Encode.encode const.indent stateEncoder
+            |> Base64.encode
+            |> Http.encodeUri
 
 
 decode : String -> Result String StateData
@@ -38,20 +43,24 @@ decode input =
         stateDecoder =
             let
                 intervalDecoder =
-                    JsonDecode.map IntervalMs JsonDecode.int
+                    Json.Decode.map IntervalMs Json.Decode.int
 
                 titleField =
-                    (JsonDecode.field keys.title JsonDecode.string)
+                    (Json.Decode.field keys.title Json.Decode.string)
 
                 intervalField =
-                    (JsonDecode.field keys.interval intervalDecoder)
+                    (Json.Decode.field keys.interval intervalDecoder)
 
                 pagesField =
-                    (JsonDecode.field keys.pages (JsonDecode.list JsonDecode.string))
+                    (Json.Decode.field keys.pages (Json.Decode.list Json.Decode.string))
             in
-                JsonDecode.map3 StateData titleField intervalField pagesField
+                Json.Decode.map3 StateData titleField intervalField pagesField
     in
-        JsonDecode.decodeString stateDecoder input
+        input
+            |> Http.decodeUri
+            |> Result.fromMaybe ("Could not decode, got Nothing from the Http.decodeUri for: '" ++ input ++ "'.")
+            |> Result.andThen Base64.decode
+            |> Result.andThen (Json.Decode.decodeString stateDecoder)
 
 
 decodeOrInitial : String -> StateData
@@ -60,8 +69,9 @@ decodeOrInitial input =
         Ok state ->
             state
 
-        Err _ ->
+        Err error ->
             initialState
+                |> Debug.log error
 
 
 const =
