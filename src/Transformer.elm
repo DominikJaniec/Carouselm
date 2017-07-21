@@ -1,9 +1,7 @@
 module Transformer exposing (encode, decode, decodeOrInitial)
 
 import Base64
-import Debug
 import Http
-import List
 import Json.Encode
 import Json.Decode
 import State exposing (..)

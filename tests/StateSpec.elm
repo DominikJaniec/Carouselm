@@ -24,32 +24,45 @@ suite =
                         |> Expect.equal (1000 * value)
             ]
         , describe "method `fix`"
-            [ test "transforms `initialApp` into `initialEditApp`" <|
-                \_ ->
-                    State.initialApp
-                        |> State.fix
-                        |> Expect.equal State.initialEditApp
-            , test "has no effect on the `initialEditApp`" <|
-                \_ ->
-                    State.initialEditApp
-                        |> State.fix
-                        |> Expect.equal State.initialEditApp
-            , test "fixes state with `ModeInit` with data into `initialEditApp`" <|
-                \_ ->
-                    ( State.ModeInit, Just (State.Data "XXX" (State.IntervalMs 0) [ "X" ]) )
-                        |> State.fix
-                        |> Expect.equal State.initialEditApp
-            , test "does not change custom state" <|
+            [ test "transforms `ModeInit` with data to `ModeShow`" <|
                 \_ ->
                     let
                         sampleData =
-                            State.Data "Complicated title" (State.IntervalMs 4) [ "url" ]
-
-                        sampleApp =
-                            ( State.ModeShow, Just sampleData )
+                            State.Data "Some title" (State.IntervalSec 3) []
                     in
-                        sampleApp
+                        ( State.ModeInit, Just sampleData )
                             |> State.fix
-                            |> Expect.equal sampleApp
+                            |> Expect.equal ( State.ModeShow, Just sampleData )
+            , test "does not change app's state for `ModeShow` and `ModeEdit`" <|
+                \_ ->
+                    let
+                        sampleData =
+                            State.Data "Very c0mpl1(^7ed title" (State.IntervalMs 4) [ "URL", "s" ]
+
+                        customAppStates =
+                            [ ( State.ModeEdit, Just sampleData )
+                            , ( State.ModeShow, Just sampleData )
+                            ]
+                    in
+                        List.map State.fix customAppStates
+                            |> Expect.equalLists customAppStates
+            , describe "transforms all modes without data into `initialApp`" <|
+                let
+                    appStatesWithoutData =
+                        [ ( State.ModeInit, Maybe.Nothing )
+                        , ( State.ModeEdit, Maybe.Nothing )
+                        , ( State.ModeShow, Maybe.Nothing )
+                        ]
+
+                    header app =
+                        "case of: `" ++ (toString (Tuple.first app)) ++ "`"
+
+                    tester app =
+                        test (header app) <|
+                            \_ ->
+                                State.fix app
+                                    |> Expect.equal State.initialApp
+                in
+                    List.map tester appStatesWithoutData
             ]
         ]

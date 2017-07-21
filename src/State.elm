@@ -1,8 +1,5 @@
 module State exposing (..)
 
-import Debug
-import Maybe
-
 
 type Interval
     = IntervalMs Int
@@ -46,11 +43,6 @@ initialData =
 
 initialApp : App
 initialApp =
-    ( ModeInit, Nothing )
-
-
-initialEditApp : App
-initialEditApp =
     ( ModeEdit, Just initialData )
 
 
@@ -68,13 +60,11 @@ fix : App -> App
 fix app =
     case app of
         ( mode, Nothing ) ->
-            initialEditApp
-                |> Debug.log ("Fixed `" ++ toString mode ++ "` without data to the .")
+            initialApp
+                |> Debug.log ("Changed `" ++ toString mode ++ "` without any data to the initial app state")
 
         ( ModeInit, data ) ->
-            initialApp
-                |> Debug.log ("Moving `" ++ toString ModeInit ++ "` with data: " ++ toString data)
-                |> fix
+            ( ModeShow, data )
 
         appState ->
             appState
