@@ -1,4 +1,4 @@
-module State.Provider exposing (loadFromString)
+module State.Provider exposing (loadFromString, storeInString)
 
 import State
 import State.Transformer as Transformer
@@ -22,10 +22,41 @@ loadFromString input =
                 buildApp mode data =
                     ( mode, Just data )
             in
-                Result.map2 buildApp (extractMode modePart) (extractData dataPart)
+                Transformer.decode dataPart
+                    |> Result.map2 buildApp (extractMode modePart)
 
         otherParts ->
             Err ("Unknown parts' schema. Too many '/'.")
+
+
+storeInString : State.App -> Result String String
+storeInString app =
+    let
+        mode =
+            Tuple.first app
+
+        data =
+            Tuple.second app
+    in
+        case ( mode, data ) of
+            ( State.ModeInit, Nothing ) ->
+                Ok ""
+
+            ( State.ModeInit, Just _ ) ->
+                Err "The `ModeInit` could not be with any data."
+
+            _ ->
+                let
+                    encodedData =
+                        data
+                            |> Maybe.map Transformer.encode
+                            |> Maybe.withDefault ""
+
+                    makeResult mode =
+                        Ok <| mode ++ "/" ++ encodedData
+                in
+                    translateMode mode
+                        |> Result.andThen makeResult
 
 
 basicState : Result String State.App
@@ -53,6 +84,14 @@ extractMode from =
             Err ("Unknown mode: `" ++ from ++ "`.")
 
 
-extractData : String -> Result String State.Data
-extractData =
-    Transformer.decode
+translateMode : State.Mode -> Result String String
+translateMode mode =
+    case mode of
+        State.ModeShow ->
+            Ok "show"
+
+        State.ModeEdit ->
+            Ok "edit"
+
+        _ ->
+            Err ""
