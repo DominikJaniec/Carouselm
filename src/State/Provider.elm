@@ -1,6 +1,7 @@
 module State.Provider exposing (loadFromString)
 
 import State
+import State.Transformer as Transformer
 
 
 loadFromString : String -> Result String State.App
@@ -16,8 +17,15 @@ loadFromString input =
             in
                 Result.map buildApp (extractMode modePart)
 
+        [ modePart, dataPart ] ->
+            let
+                buildApp mode data =
+                    ( mode, Just data )
+            in
+                Result.map2 buildApp (extractMode modePart) (extractData dataPart)
+
         otherParts ->
-            Err ("Unknown parts' schema. Too many '/'." ++ toString otherParts)
+            Err ("Unknown parts' schema. Too many '/'.")
 
 
 basicState : Result String State.App
@@ -43,3 +51,8 @@ extractMode from =
 
         _ ->
             Err ("Unknown mode: `" ++ from ++ "`.")
+
+
+extractData : String -> Result String State.Data
+extractData =
+    Transformer.decode
