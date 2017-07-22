@@ -49,9 +49,9 @@ suite =
             , describe "transforms all modes without data into `initialApp`" <|
                 let
                     appStatesWithoutData =
-                        [ ( State.ModeInit, Maybe.Nothing )
-                        , ( State.ModeEdit, Maybe.Nothing )
-                        , ( State.ModeShow, Maybe.Nothing )
+                        [ ( State.ModeInit, Nothing )
+                        , ( State.ModeEdit, Nothing )
+                        , ( State.ModeShow, Nothing )
                         ]
 
                     header app =

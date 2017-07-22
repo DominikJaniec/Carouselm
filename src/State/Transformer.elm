@@ -1,4 +1,4 @@
-module Transformer exposing (encode, decode, decodeOrInitial)
+module State.Transformer exposing (encode, decode, decodeOrInitial)
 
 import Base64
 import Http

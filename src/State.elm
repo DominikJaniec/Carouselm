@@ -6,7 +6,7 @@ type Interval
     | IntervalSec Int
 
 
-type Side
+type Mode
     = ModeInit
     | ModeEdit
     | ModeShow
@@ -20,7 +20,7 @@ type alias Data =
 
 
 type alias App =
-    ( Side, Maybe Data )
+    ( Mode, Maybe Data )
 
 
 initialData : Data

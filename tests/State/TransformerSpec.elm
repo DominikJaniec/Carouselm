@@ -1,14 +1,14 @@
-module TransformerSpec exposing (..)
+module State.TransformerSpec exposing (..)
 
 import Expect exposing (Expectation)
 import Test exposing (..)
 import State
-import Transformer
+import State.Transformer as Transformer
 
 
 suite : Test
 suite =
-    describe "The Transformer module"
+    describe "The State.Transformer module"
         [ describe "Piped `encode` and `decode` returns given input"
             [ test "has no effect on the `initialData`" <|
                 \_ ->
@@ -27,7 +27,7 @@ suite =
                             |> pipedTransformer
                             |> Expect.equal sampleData
             ]
-        , describe "Method `encode` produces correct Base64 string" <|
+        , describe "Method `encode` produces correct Base64 string"
             [ test "for standard `initialData` input" <|
                 \_ ->
                     State.initialData
