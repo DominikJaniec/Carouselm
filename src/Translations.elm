@@ -9,10 +9,9 @@ type TraKey
     | TK_Edit_Title
     | TK_Edit_Interval
     | TK_Edit_Pages
-    | TK_Edit_GenerateUrl
-    | TK_Edit_CopyUrl
-    | TK_Flow_Refresh
+    | TK_Flow_Preview
     | TK_Flow_GoToShow
+    | TK_Edit_CopyUrl
 
 
 translate : TraKey -> String
@@ -39,17 +38,14 @@ translate key =
         TK_Edit_Pages ->
             "Pages (single URL per line):"
 
-        TK_Edit_GenerateUrl ->
-            "Generate URL"
-
-        TK_Edit_CopyUrl ->
-            "Copy"
-
-        TK_Flow_Refresh ->
+        TK_Flow_Preview ->
             "Preview configuration"
 
         TK_Flow_GoToShow ->
             "Go to Show"
+
+        TK_Edit_CopyUrl ->
+            "Copy"
 
 
 translateHelp : TraKey -> Maybe String
@@ -64,17 +60,14 @@ translateHelp key =
         TK_Edit_Pages ->
             Just "TODO - TK_Edit_Pages"
 
-        TK_Edit_GenerateUrl ->
-            Just "TODO - TK_Edit_GenerateUrl"
-
-        TK_Edit_CopyUrl ->
-            Just "TODO - TK_Edit_CopyUrl"
-
-        TK_Flow_Refresh ->
-            Just "TODO - TK_Flow_Refresh"
+        TK_Flow_Preview ->
+            Just "TODO - TK_Flow_Preview"
 
         TK_Flow_GoToShow ->
             Just "TODO - TK_Edit_GoToShow"
+
+        TK_Edit_CopyUrl ->
+            Just "TODO - TK_Edit_CopyUrl"
 
         _ ->
             Nothing

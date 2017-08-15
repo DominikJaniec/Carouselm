@@ -57,10 +57,9 @@ type Msg
     | Interval String
     | Pages String
     | ShowHelp
-    | GenerateUrl
-    | CopyUrl
-    | Refresh
+    | Preview
     | GoToShow
+    | CopyUrl
 
 
 update : Msg -> Model -> Model
@@ -78,16 +77,13 @@ update msg model =
         ShowHelp ->
             { model | showHelp = True }
 
-        GenerateUrl ->
+        Preview ->
             withGeneratedUrl model
 
-        CopyUrl ->
-            model
-
-        Refresh ->
-            model
-
         GoToShow ->
+            model
+
+        CopyUrl ->
             model
 
 
@@ -135,8 +131,8 @@ editView model =
     section [ class "view-edit" ]
         [ sectionTop model
         , sectionConfig model
-        , sectionDataUrl model
         , sectionFlow model
+        , sectionUrl model
         ]
 
 
@@ -163,20 +159,17 @@ sectionConfig model =
         ]
 
 
-sectionDataUrl : Model -> Html Msg
-sectionDataUrl model =
-    section [ class "section-dataUrl" ]
-        [ buttonFor TK_Edit_GenerateUrl GenerateUrl
-        , div [ class "copy-value" ]
-            [ input [ disabled True, defaultValue model.generatedUrl ] []
-            , buttonFor TK_Edit_CopyUrl CopyUrl
-            ]
-        ]
-
-
 sectionFlow : Model -> Html Msg
 sectionFlow model =
     section [ class "section-flow" ]
-        [ buttonFor TK_Flow_Refresh Refresh
+        [ buttonFor TK_Flow_Preview Preview
         , buttonFor TK_Flow_GoToShow GoToShow
+        ]
+
+
+sectionUrl : Model -> Html Msg
+sectionUrl model =
+    section [ class "section-url" ]
+        [ input [ disabled True, defaultValue model.generatedUrl ] []
+        , buttonFor TK_Edit_CopyUrl CopyUrl
         ]
