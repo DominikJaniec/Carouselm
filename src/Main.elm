@@ -2,11 +2,13 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (..)
+import Controls exposing (..)
 import State exposing (..)
 import Translations exposing (..)
 
 
+main : Program Never Model Msg
 main =
     Html.beginnerProgram
         { model = model
@@ -15,10 +17,16 @@ main =
         }
 
 
+
+-- MODEL
+
+
 type alias Model =
     { title : String
     , interval : Int
     , pages : String
+    , showHelp : Bool
+    , generatedUrl : String
     }
 
 
@@ -36,18 +44,22 @@ model =
             (initial.pages ++ [ "" ])
                 |> String.join "\n"
     in
-        Model
-            initial.title
-            initialInterval
-            initialPages
+        Model initial.title initialInterval initialPages False ""
+            |> withGeneratedUrl
+
+
+
+-- UPDATE
 
 
 type Msg
     = Title String
     | Interval String
     | Pages String
+    | ShowHelp
+    | GenerateUrl
     | CopyUrl
-    | Preview
+    | Refresh
     | GoToShow
 
 
@@ -58,102 +70,113 @@ update msg model =
             { model | title = txt }
 
         Interval val ->
-            let
-                parsed =
-                    String.toInt val
-                        |> Result.withDefault -42
-            in
-                { model | interval = parsed }
+            withParsedInterval model val
 
         Pages txt ->
             { model | pages = txt }
 
+        ShowHelp ->
+            { model | showHelp = True }
+
+        GenerateUrl ->
+            withGeneratedUrl model
+
         CopyUrl ->
             model
 
-        Preview ->
+        Refresh ->
             model
 
         GoToShow ->
             model
 
 
+withParsedInterval : Model -> String -> Model
+withParsedInterval model text =
+    let
+        parsed =
+            String.toInt text
+                |> Result.withDefault -42
+    in
+        { model | interval = parsed }
+
+
+withGeneratedUrl : Model -> Model
+withGeneratedUrl model =
+    { model | generatedUrl = generateUrl model }
+
+
+generateUrl : Model -> String
+generateUrl model =
+    [ model.title, (toString model.interval), model.pages ]
+        |> String.join "||"
+        |> String.length
+        |> toString
+
+
+
+-- VIEW
+
+
 view : Model -> Html Msg
 view model =
-    div [] [ showPreview model, editView model ]
+    div [ class "view-app" ]
+        [ showView model, editView model ]
 
 
-text : TranslationKey -> Html Msg
-text key =
-    translate key
-        |> Html.text
-
-
-labelFor : TranslationKey -> String -> Html Msg
-labelFor key inputId =
-    let
-        helpIcon txt =
-            span [ title txt ] [ Html.text "(?)" ]
-
-        labelContent =
-            case translateHelpFor key of
-                Just helpTxt ->
-                    [ text key, helpIcon helpTxt ]
-
-                Nothing ->
-                    [ text key ]
-    in
-        label [ for inputId ] labelContent
-
-
-buttonFor : TranslationKey -> Msg -> Html Msg
-buttonFor key msg =
-    let
-        buttonAttr =
-            case translateHelpFor key of
-                Just helpTxt ->
-                    [ title helpTxt ]
-
-                Nothing ->
-                    []
-
-        buttonContent =
-            [ text key ]
-    in
-        button buttonAttr buttonContent
+showView : Model -> Html Msg
+showView model =
+    section [ class "view-show" ]
+        [ text "Show: View - TODO..." ]
 
 
 editView : Model -> Html Msg
 editView model =
-    div []
-        [ h1 [] [ text TK_App_Name ]
-        , h3 [] [ text TK_App_Description ]
-        , text TK_App_ShowHelp
-        , hr [] []
-        , div []
-            [ labelFor TK_Edit_Title "title"
-            , input [ id "title", type_ "text", required True, onInput Title, defaultValue model.title ] []
+    section [ class "view-edit" ]
+        [ sectionTop model
+        , sectionConfig model
+        , sectionDataUrl model
+        , sectionFlow model
+        ]
+
+
+sectionTop : Model -> Html Msg
+sectionTop model =
+    section [ class "section-top" ]
+        [ h1 [] [ textFor TK_App_Name ]
+        , h3 []
+            [ textFor TK_App_Description
+            , button [ class "help-show", hidden model.showHelp, onClick ShowHelp ]
+                [ textFor TK_App_Help_Show ]
             ]
-        , div []
-            [ labelFor TK_Edit_Interval "interval"
-            , input [ id "interval", type_ "text", required True, onInput Interval, defaultValue (toString model.interval) ] []
-            ]
-        , div []
-            [ labelFor TK_Edit_Pages "pages"
-            , textarea [ id "pages", required True, onInput Pages, defaultValue model.pages ] []
-            ]
-        , hr [] []
-        , div []
-            [ input [ disabled True, defaultValue "TODO. Generated URL..." ] []
+        , article [ class "help-content", hidden (not model.showHelp) ]
+            [ textFor TK_App_Help_Content ]
+        ]
+
+
+sectionConfig : Model -> Html Msg
+sectionConfig model =
+    section [ class "section-config" ]
+        [ inputFor TK_Edit_Title "vid_title" Title model.title
+        , inputFor TK_Edit_Interval "vid_interval" Interval (toString model.interval)
+        , inputAreaFor TK_Edit_Pages "vid_pages" Pages model.pages
+        ]
+
+
+sectionDataUrl : Model -> Html Msg
+sectionDataUrl model =
+    section [ class "section-dataUrl" ]
+        [ buttonFor TK_Edit_GenerateUrl GenerateUrl
+        , div [ class "copy-value" ]
+            [ input [ disabled True, defaultValue model.generatedUrl ] []
             , buttonFor TK_Edit_CopyUrl CopyUrl
-            ]
-        , div []
-            [ buttonFor TK_Edit_Preview Preview
-            , buttonFor TK_Edit_GoToShow GoToShow
             ]
         ]
 
 
-showPreview : Model -> Html Msg
-showPreview model =
-    div [] [ Html.text "TODO..." ]
+sectionFlow : Model -> Html Msg
+sectionFlow model =
+    section [ class "section-flow" ]
+        [ buttonFor TK_Flow_Refresh Refresh
+        , buttonFor TK_Flow_GoToShow GoToShow
+        ]
