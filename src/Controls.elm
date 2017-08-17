@@ -18,6 +18,16 @@ buttonFor key msg =
         |> withHelpTooltipIcon key
 
 
+iconButtonFor : TraKey -> String -> msg -> Html msg
+iconButtonFor key cssClass msg =
+    button
+        [ class <| cssClass ++ " button-icon"
+        , title <| translate key
+        , onClick msg
+        ]
+        []
+
+
 inputFor : TraKey -> String -> (String -> msg) -> String -> Html msg
 inputFor key vid msg init =
     div [ class "form-group group-input" ]
@@ -50,5 +60,4 @@ withHelpTooltipIcon key msgHtml =
                 Nothing ->
                     []
     in
-        div [ class "with-help" ]
-            (msgHtml :: tooltip)
+        div [ class "with-help" ] (msgHtml :: tooltip)

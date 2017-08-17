@@ -11,7 +11,9 @@ type TraKey
     | TK_Edit_Pages
     | TK_Flow_Preview
     | TK_Flow_GoToShow
-    | TK_Edit_CopyUrl
+    | TK_Flow_CopyUrl
+    | TK_Show_Edit
+    | TK_Show_About
 
 
 translate : TraKey -> String
@@ -44,8 +46,14 @@ translate key =
         TK_Flow_GoToShow ->
             "Go to Show"
 
-        TK_Edit_CopyUrl ->
+        TK_Flow_CopyUrl ->
             "Copy"
+
+        TK_Show_Edit ->
+            "Edit show"
+
+        TK_Show_About ->
+            "Carouselm: About"
 
 
 translateHelp : TraKey -> Maybe String
@@ -66,7 +74,7 @@ translateHelp key =
         TK_Flow_GoToShow ->
             Just "TODO - TK_Edit_GoToShow"
 
-        TK_Edit_CopyUrl ->
+        TK_Flow_CopyUrl ->
             Just "TODO - TK_Edit_CopyUrl"
 
         _ ->

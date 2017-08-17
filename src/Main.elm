@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Debug
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -57,9 +58,11 @@ type Msg
     | Interval String
     | Pages String
     | ShowHelp
+    | CopyUrl
     | Preview
     | GoToShow
-    | CopyUrl
+    | GoToEdit
+    | GoToAbout
 
 
 update : Msg -> Model -> Model
@@ -80,10 +83,16 @@ update msg model =
         Preview ->
             withGeneratedUrl model
 
+        CopyUrl ->
+            Debug.crash "Not yet implemented."
+
         GoToShow ->
             model
 
-        CopyUrl ->
+        GoToEdit ->
+            model
+
+        GoToAbout ->
             model
 
 
@@ -123,7 +132,35 @@ view model =
 showView : Model -> Html Msg
 showView model =
     section [ class "view-show" ]
-        [ text "Show: View - TODO..." ]
+        [ sectionNavigator model
+        , sectionDisplay model
+        ]
+
+
+sectionNavigator : Model -> Html Msg
+sectionNavigator model =
+    let
+        flowButtons =
+            [ iconButtonFor TK_Show_Edit "icon-edit" GoToEdit
+            , iconButtonFor TK_Show_About "icon-about" GoToAbout
+            ]
+    in
+        section [ class "section-navigator" ]
+            [ (pageIndicators model ++ flowButtons)
+                |> List.map (\e -> li [] [ e ])
+                |> ul [ class "navi-menu" ]
+            ]
+
+
+pageIndicators : Model -> List (Html Msg)
+pageIndicators model =
+    List.repeat 4 "(o)"
+        |> List.map (\e -> button [] [ text e ])
+
+
+sectionDisplay : Model -> Html Msg
+sectionDisplay model =
+    section [] [ text "Show: View - TODO..." ]
 
 
 editView : Model -> Html Msg
@@ -171,5 +208,5 @@ sectionUrl : Model -> Html Msg
 sectionUrl model =
     section [ class "section-url" ]
         [ input [ disabled True, defaultValue model.generatedUrl ] []
-        , buttonFor TK_Edit_CopyUrl CopyUrl
+        , buttonFor TK_Flow_CopyUrl CopyUrl
         ]
