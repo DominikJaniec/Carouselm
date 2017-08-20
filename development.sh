@@ -1,5 +1,6 @@
 #! /bin/bash
 
+# start elm-test --watch
 start elm reactor
-git visualize
+start gitk --all
 code .

@@ -13,7 +13,7 @@ suite =
             [ test "has no effect on the `initialData`" <|
                 \_ ->
                     State.initialData
-                        |> pipedTransformer
+                        |> pipedTestedTransformer
                         |> Expect.equal State.initialData
             , test "handles custom data" <|
                 \_ ->
@@ -24,7 +24,7 @@ suite =
                                 [ "a", "b", "c", "d" ]
                     in
                         sampleData
-                            |> pipedTransformer
+                            |> pipedTestedTransformer
                             |> Expect.equal sampleData
             ]
         , describe "Method `encode` produces correct Base64 string"
@@ -53,7 +53,7 @@ suite =
         ]
 
 
-pipedTransformer : State.Data -> State.Data
-pipedTransformer input =
+pipedTestedTransformer : State.Data -> State.Data
+pipedTestedTransformer input =
     Transformer.encode input
         |> Transformer.decodeOrInitial
