@@ -44,9 +44,9 @@ suite =
             ]
         , describe "Method `parseInterval`"
             [ testCases "Should return `Ok IntervalMs` for an input with positive integer Number"
-                [ ( "1", Ok (State.IntervalMs 1) )
-                , ( "001", Ok (State.IntervalMs 1) )
-                , ( " 1\n", Ok (State.IntervalMs 1) )
+                [ ( "22", Ok (State.IntervalMs 22) )
+                , ( "0022", Ok (State.IntervalMs 22) )
+                , ( " 22\n", Ok (State.IntervalMs 22) )
                 , ( "4112", Ok (State.IntervalMs 4112) )
                 , ( "18690", Ok (State.IntervalMs 18690) )
                 , ( "\t\t111\t\t", Ok (State.IntervalMs 111) )
@@ -56,7 +56,7 @@ suite =
                 \input expected ->
                     Parser.parseInterval input
                         |> Expect.equal expected
-            , testCases "Should return `Ok IntervalSec` for an input with positive Number ends with `sec` or `s`"
+            , testCases "Should return `Ok Interval` for an input with positive Number ends with `sec` or `s`"
                 [ ( "7s", Ok (State.IntervalSec 7) )
                 , ( "2sec", Ok (State.IntervalSec 2) )
                 , ( "03s", Ok (State.IntervalSec 3) )
@@ -78,8 +78,38 @@ suite =
                 \input expected ->
                     Parser.parseInterval input
                         |> Expect.equal expected
-            , testSamples "Should return `Err InvalidFormat cause` for an input other than Number"
-                [ "one", "other", "1234-5", "1O2", "   seven", "fourty-two", "0x03z", "    \t 123,45 \n", "12,345,678.90", "42h", "7min", "3m" ]
+            , testSamples "Should return `Err (OutOfRange range)` for value outside valid range"
+                [ Parser.intervalRangeMs |> .start |> (-) 1 |> toString
+                , Parser.intervalRangeMs |> .limit |> toString
+                , Parser.intervalRangeMs |> .limit |> (+) 1 |> toString
+                , (Parser.intervalRange |> .start |> (-) 0.00000001 |> toString) ++ "s"
+                , (Parser.intervalRange |> .limit |> toString) ++ "  \t\n\t  sec"
+                , (Parser.intervalRange |> .limit |> (+) 0.00000001 |> toString) ++ "sec"
+                ]
+              <|
+                \input ->
+                    case Parser.parseInterval input of
+                        Err (Parser.OutOfRange _) ->
+                            Expect.pass
+
+                        other ->
+                            ("Expected `OutOfRange` but got: " ++ toString other)
+                                |> Expect.fail
+            , testSamples "Should return `Err (InvalidFormat cause)` for an input other than Number"
+                [ "one"
+                , "other"
+                , "1234-5"
+                , "1O2"
+                , "   seven"
+                , "six  "
+                , "fourty-two"
+                , "0x03z"
+                , "    \t 123,45 \n"
+                , "12,345,678.90"
+                , "42h"
+                , "7min"
+                , "3m"
+                ]
               <|
                 \input ->
                     case Parser.parseInterval input of
