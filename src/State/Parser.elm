@@ -21,3 +21,22 @@ parseTitle input =
                     Err (ToLong maxLenght)
                 else
                     Ok title
+
+
+parsePages : String -> Result ValidationError (List String)
+parsePages input =
+    let
+        notEmptyLine line =
+            not <| String.isEmpty line
+
+        trimmedLines =
+            String.split "\n" input
+                |> List.map String.trim
+                |> List.filter notEmptyLine
+    in
+        case trimmedLines of
+            [] ->
+                Err Required
+
+            lines ->
+                Ok lines
