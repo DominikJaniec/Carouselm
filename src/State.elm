@@ -3,7 +3,7 @@ module State exposing (..)
 
 type Interval
     = IntervalMs Int
-    | IntervalSec Int
+    | IntervalSec Float
 
 
 type Mode
@@ -53,7 +53,7 @@ asMillisecond interval =
             val
 
         IntervalSec val ->
-            1000 * val
+            1000.0 * val |> floor
 
 
 fix : App -> App

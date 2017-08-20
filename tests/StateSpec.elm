@@ -16,12 +16,12 @@ suite =
                         |> State.IntervalMs
                         |> State.asMillisecond
                         |> Expect.equal value
-            , fuzz int "`IntervalSec` - outputs thousands more" <|
+            , fuzz float "`IntervalSec` - outputs thousands more" <|
                 \value ->
                     value
                         |> State.IntervalSec
                         |> State.asMillisecond
-                        |> Expect.equal (1000 * value)
+                        |> Expect.equal (floor (1000.0 * value))
             ]
         , describe "method `fix`"
             [ test "transforms `ModeInit` with data to `ModeShow`" <|
