@@ -1,6 +1,6 @@
 module State.Parser exposing (..)
 
-import State exposing (Interval)
+import State exposing (Interval, Data)
 
 
 type alias Range =
@@ -14,6 +14,72 @@ type ValidationError
     | ToLong Int
     | InvalidFormat String
     | OutOfRange Range
+
+
+type Field
+    = Title
+    | Interval
+    | Pages
+
+
+type alias StateErrors =
+    ( Field, ValidationError )
+
+
+type alias InputState =
+    { title : String
+    , interval : String
+    , pages : String
+    }
+
+
+parse : InputState -> Result (List StateErrors) State.Data
+parse inputState =
+    parseState
+        inputState.title
+        inputState.interval
+        inputState.pages
+
+
+parseState : String -> String -> String -> Result (List StateErrors) State.Data
+parseState title interval pages =
+    let
+        setFromHandler parser field setter =
+            \input ( errors, state ) ->
+                case parser input of
+                    Ok parsed ->
+                        ( errors, (setter state parsed) )
+
+                    Err error ->
+                        ( ( field, error ) :: errors, state )
+
+        titleHandler =
+            (\st val -> { st | title = val })
+                |> setFromHandler parseTitle Title
+
+        intervalHandler =
+            (\st val -> { st | interval = val })
+                |> setFromHandler parseInterval Interval
+
+        pagesHandler =
+            (\st val -> { st | pages = val })
+                |> setFromHandler parsePages Pages
+
+        folder ( handler, input ) result =
+            handler input result
+    in
+        case
+            List.foldl folder ( [], State.initialData ) <|
+                [ ( titleHandler, title )
+                , ( intervalHandler, interval )
+                , ( pagesHandler, pages )
+                ]
+        of
+            ( [], parsed ) ->
+                Ok parsed
+
+            ( errors, _ ) ->
+                Err errors
 
 
 parseTitle : String -> Result ValidationError String

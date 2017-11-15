@@ -1,6 +1,7 @@
 module State.ParserSpec exposing (..)
 
 import Expect exposing (Expectation)
+import ExpectList
 import Test exposing (..)
 import Miscellaneous exposing (..)
 import State
@@ -10,7 +11,59 @@ import State.Parser as Parser
 suite : Test
 suite =
     describe "The State.Parser module"
-        [ describe "Method `parseTitle`"
+        [ describe "Method `parseState`"
+            [ test "Should return `Err Required` for every field of `State`, when only empty inputs were given" <|
+                \_ ->
+                    expectResultError (Parser.parseState "" "\t \n \t" "   ") <|
+                        ExpectList.equivalent
+                            [ ( Parser.Title, Parser.Required )
+                            , ( Parser.Interval, Parser.Required )
+                            , ( Parser.Pages, Parser.Required )
+                            ]
+            , testCases "Should return `Err's` for invalid Fields' arguments of `State`"
+                [ ( { title = ("more" ++ maxLenghtTitle)
+                    , interval = "7s"
+                    , pages = ""
+                    }
+                  , [ ( Parser.Title, (Parser.ToLong Parser.titleMaxLength) )
+                    , ( Parser.Pages, Parser.Required )
+                    ]
+                  )
+                , ( { title = ""
+                    , interval = "13 km"
+                    , pages = "https://en.wikipedia.org/wiki/Kilometre"
+                    }
+                  , [ ( Parser.Title, Parser.Required )
+                    , ( Parser.Interval, (Parser.InvalidFormat "could not convert string '13 km' to an Int") )
+                    ]
+                  )
+                , ( { title = "should not be ok"
+                    , interval = "forty two sec"
+                    , pages = "http://lmgtfy.com/?q=42"
+                    }
+                  , [ ( Parser.Interval, (Parser.InvalidFormat "could not convert string 'forty two' to a Float") ) ]
+                  )
+                , ( { title = "probably tooooo big number"
+                    , interval = "1234567890987654321"
+                    , pages = "mdm://Number/MAX_SAFE_INTEGER"
+                    }
+                  , [ ( Parser.Interval, (Parser.OutOfRange Parser.intervalRangeMs) ) ]
+                  )
+                , ( { title = "too much seconds"
+                    , interval = "999999999999sec"
+                    , pages = ""
+                    }
+                  , [ ( Parser.Interval, (Parser.OutOfRange Parser.intervalRange) )
+                    , ( Parser.Pages, Parser.Required )
+                    ]
+                  )
+                ]
+              <|
+                \input errors ->
+                    expectResultError (Parser.parse input) <|
+                        ExpectList.equivalent errors
+            ]
+        , describe "Method `parseTitle`"
             [ testCases "Should return trimmed `Ok str` for a correct input"
                 [ ( "Sample title", Ok "Sample title" )
                 , ( "   hole on left", Ok "hole on left" )
@@ -160,7 +213,7 @@ suite =
 
 maxLenghtTitle : String
 maxLenghtTitle =
-    String.repeat 50 "o"
+    String.repeat Parser.titleMaxLength "o"
 
 
 emptyInputSamples : List String

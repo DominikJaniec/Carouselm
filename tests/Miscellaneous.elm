@@ -36,3 +36,13 @@ testSamples name inputs tester =
     in
         List.map makeTest inputs
             |> Test.describe name
+
+
+expectResultError : Result subject x -> (subject -> Expectation) -> Expectation
+expectResultError result test =
+    case result of
+        Ok _ ->
+            Expect.fail "Expected `Err`, but got `Ok`"
+
+        Err x ->
+            test x
