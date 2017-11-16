@@ -1,6 +1,6 @@
 module State.Parser exposing (..)
 
-import State exposing (Interval, Data)
+import State
 
 
 type alias Range =
@@ -39,6 +39,14 @@ parse inputState =
         inputState.title
         inputState.interval
         inputState.pages
+
+
+unparse : State.Data -> InputState
+unparse data =
+    InputState
+        data.title
+        (unparseInterval data)
+        (unparsePages data)
 
 
 parseState : String -> String -> String -> Result (List StateErrors) State.Data
@@ -147,6 +155,16 @@ parseInterval input =
                             |> Result.map State.IntervalMs
 
 
+unparseInterval : State.Data -> String
+unparseInterval data =
+    case data.interval of
+        State.IntervalMs ms ->
+            toString ms
+
+        State.IntervalSec sec ->
+            (toString sec) ++ " sec"
+
+
 parsePages : String -> Result ValidationError (List String)
 parsePages input =
     let
@@ -164,6 +182,12 @@ parsePages input =
 
             lines ->
                 Ok lines
+
+
+unparsePages : State.Data -> String
+unparsePages data =
+    (data.pages ++ [ "" ])
+        |> String.join "\n"
 
 
 titleMaxLength : Int

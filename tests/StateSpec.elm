@@ -3,13 +3,30 @@ module StateSpec exposing (..)
 import Expect exposing (Expectation)
 import Fuzz exposing (..)
 import Test exposing (..)
+import Miscellaneous exposing (..)
 import State
 
 
 suite : Test
 suite =
     describe "The State module"
-        [ describe "method `asMillisecond`"
+        [ describe "method `showApp`" <|
+            [ testSamples "wraps data with default `ModeShow`"
+                [ State.initialData
+                , { title = "Sample `State.Data` for show"
+                  , interval = State.IntervalSec 365
+                  , pages =
+                        [ "https://www.last.fm/user/Pu55ty"
+                        , "https://open.spotify.com/artist/0HJQZHbKgYyWCDc8uVko6S"
+                        ]
+                  }
+                ]
+              <|
+                \sample ->
+                    State.showApp sample
+                        |> Expect.equal ( State.ModeShow, Just sample )
+            ]
+        , describe "method `asMillisecond`"
             [ fuzz int "`IntervalMs` - let given millisecods through" <|
                 \value ->
                     value

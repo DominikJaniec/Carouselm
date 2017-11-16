@@ -5,7 +5,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Controls exposing (..)
-import State exposing (..)
+import State
+import State.Parser as Parser
+import State.Provider as Provider
 import Translations exposing (..)
 
 
@@ -23,30 +25,24 @@ main =
 
 
 type alias Model =
-    { title : String
-    , interval : Int
-    , pages : String
+    { inputs : Parser.InputState
+    , stateData : State.Data
     , showHelp : Bool
-    , generatedUrl : String
+    , shareUrl : String
     }
 
 
 model : Model
 model =
     let
-        initial =
+        stateData =
             State.initialData
 
-        initialInterval =
-            initial.interval
-                |> State.asMillisecond
-
-        initialPages =
-            (initial.pages ++ [ "" ])
-                |> String.join "\n"
+        emptyInputs =
+            Parser.InputState "" "" ""
     in
-        Model initial.title initialInterval initialPages False ""
-            |> withGeneratedUrl
+        Model emptyInputs stateData False ""
+            |> withState stateData
 
 
 
@@ -67,56 +63,60 @@ type Msg
 
 update : Msg -> Model -> Model
 update msg model =
-    case msg of
-        Title txt ->
-            { model | title = txt }
-
-        Interval val ->
-            withParsedInterval model val
-
-        Pages txt ->
-            { model | pages = txt }
-
-        ShowHelp ->
-            { model | showHelp = True }
-
-        Preview ->
-            withGeneratedUrl model
-
-        CopyUrl ->
-            Debug.crash "Not yet implemented."
-
-        GoToShow ->
-            model
-
-        GoToEdit ->
-            model
-
-        GoToAbout ->
-            model
-
-
-withParsedInterval : Model -> String -> Model
-withParsedInterval model text =
     let
-        parsed =
-            String.toInt text
-                |> Result.withDefault -42
+        withInputs setter =
+            { model | inputs = (setter model.inputs) }
     in
-        { model | interval = parsed }
+        case msg of
+            Title txt ->
+                withInputs <| \i -> { i | title = txt }
+
+            Interval txt ->
+                withInputs <| \i -> { i | interval = txt }
+
+            Pages txt ->
+                withInputs <| \i -> { i | pages = txt }
+
+            ShowHelp ->
+                { model | showHelp = True }
+
+            Preview ->
+                -- TODO : Build and update state and than:
+                { model | shareUrl = generateUrl model.stateData }
+
+            CopyUrl ->
+                Debug.crash "Not yet implemented."
+
+            GoToShow ->
+                model
+
+            GoToEdit ->
+                model
+
+            GoToAbout ->
+                model
 
 
-withGeneratedUrl : Model -> Model
-withGeneratedUrl model =
-    { model | generatedUrl = generateUrl model }
+withState : State.Data -> Model -> Model
+withState data model =
+    Model
+        (Parser.unparse data)
+        data
+        model.showHelp
+        (generateUrl data)
 
 
-generateUrl : Model -> String
-generateUrl model =
-    [ model.title, (toString model.interval), model.pages ]
-        |> String.join "||"
-        |> String.length
-        |> toString
+generateUrl : State.Data -> String
+generateUrl data =
+    case
+        State.showApp data
+            |> Provider.storeInString
+    of
+        Err error ->
+            error
+
+        Ok url ->
+            url
 
 
 
@@ -190,9 +190,9 @@ sectionTop model =
 sectionConfig : Model -> Html Msg
 sectionConfig model =
     section [ class "section-config" ]
-        [ inputFor TK_Edit_Title "vid_title" Title model.title
-        , inputFor TK_Edit_Interval "vid_interval" Interval (toString model.interval)
-        , inputAreaFor TK_Edit_Pages "vid_pages" Pages model.pages
+        [ inputFor TK_Edit_Title "vid_title" Title model.inputs.title
+        , inputFor TK_Edit_Interval "vid_interval" Interval model.inputs.interval
+        , inputAreaFor TK_Edit_Pages "vid_pages" Pages model.inputs.pages
         ]
 
 
@@ -207,6 +207,6 @@ sectionFlow model =
 sectionUrl : Model -> Html Msg
 sectionUrl model =
     section [ class "section-url" ]
-        [ input [ disabled True, defaultValue model.generatedUrl ] []
+        [ input [ disabled True, defaultValue model.shareUrl ] []
         , buttonFor TK_Flow_CopyUrl CopyUrl
         ]

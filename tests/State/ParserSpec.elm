@@ -11,7 +11,48 @@ import State.Parser as Parser
 suite : Test
 suite =
     describe "The State.Parser module"
-        [ describe "Method `parseState`"
+        [ describe "Method `parse`"
+            [ test "Should pass correct values into `parseState` method" <|
+                \_ ->
+                    let
+                        inputs =
+                            { title = maxLenghtTitle ++ " but longer"
+                            , interval = "NAN sec"
+                            , pages = "\n\t "
+                            }
+
+                        errors =
+                            [ ( Parser.Title, (Parser.ToLong Parser.titleMaxLength) )
+                            , ( Parser.Interval, (Parser.InvalidFormat "could not convert string 'NAN' to a Float") )
+                            , ( Parser.Pages, Parser.Required )
+                            ]
+                    in
+                        expectResultError (Parser.parse inputs) <|
+                            ExpectList.equivalent errors
+            ]
+        , describe "Method `unparse`"
+            [ test "Should fills correct fields of `InputState` from `State.Data`" <|
+                \_ ->
+                    let
+                        sampleStateData =
+                            { title = "Clean Green Tea tutorial"
+                            , interval = State.IntervalSec 150
+                            , pages =
+                                [ "https://en.wikipedia.org/wiki/Green_tea"
+                                , "http://gph.is/28Ngm9J"
+                                ]
+                            }
+
+                        unparsedInputs =
+                            { title = "Clean Green Tea tutorial"
+                            , interval = "150 sec"
+                            , pages = "https://en.wikipedia.org/wiki/Green_tea\nhttp://gph.is/28Ngm9J\n"
+                            }
+                    in
+                        Parser.unparse sampleStateData
+                            |> Expect.equal unparsedInputs
+            ]
+        , describe "Method `parseState`"
             [ test "Should return `Err Required` for every field of `State`, when only empty inputs were given" <|
                 \_ ->
                     expectResultError (Parser.parseState "" "\t \n \t" "   ") <|

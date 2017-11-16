@@ -68,3 +68,8 @@ fix app =
 
         appState ->
             appState
+
+
+showApp : Data -> App
+showApp data =
+    ( ModeShow, Just data )
