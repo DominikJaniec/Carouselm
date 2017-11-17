@@ -32,6 +32,10 @@ type alias Model =
     }
 
 
+type alias InputsSetter =
+    Parser.InputState -> Parser.InputState
+
+
 model : Model
 model =
     let
@@ -43,6 +47,29 @@ model =
     in
         Model emptyInputs stateData False ""
             |> withState stateData
+
+
+withState : State.Data -> Model -> Model
+withState data model =
+    Model
+        (Parser.unparse data)
+        data
+        model.showHelp
+        (generateUrl data)
+
+
+generateUrl : State.Data -> String
+generateUrl data =
+    case
+        State.showAppFor data
+            |> Provider.storeInString
+    of
+        Err error ->
+            error
+
+        Ok url ->
+            -- TODO : Find current host name - Base URL.
+            "https://example.com/" ++ url
 
 
 
@@ -63,60 +90,62 @@ type Msg
 
 update : Msg -> Model -> Model
 update msg model =
+    case msg of
+        Title txt ->
+            (\inputs -> { inputs | title = txt })
+                |> updateInputs model
+
+        Interval txt ->
+            (\inputs -> { inputs | interval = txt })
+                |> updateInputs model
+
+        Pages txt ->
+            (\inputs -> { inputs | pages = txt })
+                |> updateInputs model
+
+        ShowHelp ->
+            { model | showHelp = True }
+
+        Preview ->
+            model
+
+        CopyUrl ->
+            Debug.crash "Not yet implemented."
+
+        GoToShow ->
+            model
+
+        GoToEdit ->
+            model
+
+        GoToAbout ->
+            model
+
+
+updateInputs : Model -> InputsSetter -> Model
+updateInputs model setter =
     let
-        withInputs setter =
-            { model | inputs = (setter model.inputs) }
+        newInputs =
+            setter model.inputs
+
+        newUrl =
+            -- TODO : Make better validation:
+            makeShareUrl newInputs
     in
-        case msg of
-            Title txt ->
-                withInputs <| \i -> { i | title = txt }
-
-            Interval txt ->
-                withInputs <| \i -> { i | interval = txt }
-
-            Pages txt ->
-                withInputs <| \i -> { i | pages = txt }
-
-            ShowHelp ->
-                { model | showHelp = True }
-
-            Preview ->
-                -- TODO : Build and update state and than:
-                { model | shareUrl = generateUrl model.stateData }
-
-            CopyUrl ->
-                Debug.crash "Not yet implemented."
-
-            GoToShow ->
-                model
-
-            GoToEdit ->
-                model
-
-            GoToAbout ->
-                model
+        { model
+            | inputs = newInputs
+            , shareUrl = newUrl
+        }
 
 
-withState : State.Data -> Model -> Model
-withState data model =
-    Model
-        (Parser.unparse data)
-        data
-        model.showHelp
-        (generateUrl data)
+makeShareUrl : Parser.InputState -> String
+makeShareUrl inputs =
+    case Parser.parse inputs of
+        Err errors ->
+            toString errors
 
-
-generateUrl : State.Data -> String
-generateUrl data =
-    case
-        State.showApp data
-            |> Provider.storeInString
-    of
-        Err error ->
-            error
-
-        Ok url ->
-            url
+        Ok data ->
+            generateUrl data
 
 
 
@@ -207,6 +236,6 @@ sectionFlow model =
 sectionUrl : Model -> Html Msg
 sectionUrl model =
     section [ class "section-url" ]
-        [ input [ disabled True, defaultValue model.shareUrl ] []
+        [ input [ readonly True, defaultValue model.shareUrl ] []
         , buttonFor TK_Flow_CopyUrl CopyUrl
         ]

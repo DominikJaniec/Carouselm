@@ -10,7 +10,7 @@ import State
 suite : Test
 suite =
     describe "The State module"
-        [ describe "method `showApp`" <|
+        [ describe "method `showAppFor`" <|
             [ testSamples "wraps data with default `ModeShow`"
                 [ State.initialData
                 , { title = "Sample `State.Data` for show"
@@ -23,7 +23,7 @@ suite =
                 ]
               <|
                 \sample ->
-                    State.showApp sample
+                    State.showAppFor sample
                         |> Expect.equal ( State.ModeShow, Just sample )
             ]
         , describe "method `asMillisecond`"

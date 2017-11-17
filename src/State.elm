@@ -70,6 +70,6 @@ fix app =
             appState
 
 
-showApp : Data -> App
-showApp data =
+showAppFor : Data -> App
+showAppFor data =
     ( ModeShow, Just data )
