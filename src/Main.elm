@@ -1,9 +1,9 @@
 module Main exposing (..)
 
-import Debug
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Navigation exposing (..)
 import Controls exposing (..)
 import State
 import State.Parser as Parser
@@ -13,10 +13,11 @@ import Translations exposing (..)
 
 main : Program Never Model Msg
 main =
-    Html.beginnerProgram
-        { model = model
-        , view = view
+    Navigation.program navigate
+        { init = initializeModel
+        , subscriptions = subscriptions
         , update = update
+        , view = view
         }
 
 
@@ -32,12 +33,8 @@ type alias Model =
     }
 
 
-type alias InputsSetter =
-    Parser.InputState -> Parser.InputState
-
-
-model : Model
-model =
+initializeModel : Location -> ( Model, Cmd Msg )
+initializeModel location =
     let
         stateData =
             State.initialData
@@ -47,6 +44,7 @@ model =
     in
         Model emptyInputs stateData False ""
             |> withState stateData
+            |> pairWithCmdNone
 
 
 withState : State.Data -> Model -> Model
@@ -72,6 +70,20 @@ generateUrl data =
             "https://example.com/" ++ url
 
 
+pairWithCmdNone : Model -> ( Model, Cmd Msg )
+pairWithCmdNone model =
+    ( model, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
 
 -- UPDATE
 
@@ -88,38 +100,46 @@ type Msg
     | GoToAbout
 
 
-update : Msg -> Model -> Model
+type alias InputsSetter =
+    Parser.InputState -> Parser.InputState
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Title txt ->
             (\inputs -> { inputs | title = txt })
                 |> updateInputs model
+                |> pairWithCmdNone
 
         Interval txt ->
             (\inputs -> { inputs | interval = txt })
                 |> updateInputs model
+                |> pairWithCmdNone
 
         Pages txt ->
             (\inputs -> { inputs | pages = txt })
                 |> updateInputs model
+                |> pairWithCmdNone
 
         ShowHelp ->
             { model | showHelp = True }
+                |> pairWithCmdNone
 
         Preview ->
-            model
+            model |> pairWithCmdNone
 
         CopyUrl ->
             Debug.crash "Not yet implemented."
 
         GoToShow ->
-            model
+            model |> pairWithCmdNone
 
         GoToEdit ->
-            model
+            model |> pairWithCmdNone
 
         GoToAbout ->
-            model
+            model |> pairWithCmdNone
 
 
 updateInputs : Model -> InputsSetter -> Model
@@ -146,6 +166,12 @@ makeShareUrl inputs =
 
         Ok data ->
             generateUrl data
+
+
+navigate : Location -> Msg
+navigate location =
+    -- TODO : Impement reaction to changes of Location
+    GoToEdit
 
 
 
