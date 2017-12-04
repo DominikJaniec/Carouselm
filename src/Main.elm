@@ -7,7 +7,7 @@ import Navigation exposing (..)
 import Controls exposing (..)
 import State
 import State.Parser as Parser
-import State.Provider as Provider
+import Navigator
 import Translations exposing (..)
 
 
@@ -26,10 +26,11 @@ main =
 
 
 type alias Model =
-    { inputs : Parser.InputState
+    { navCtx : Navigator.Context
+    , inputs : Parser.InputState
     , stateData : State.Data
+    , stateShareUrl : String
     , showHelp : Bool
-    , shareUrl : String
     }
 
 
@@ -38,36 +39,15 @@ initializeModel location =
     let
         stateData =
             State.initialData
-
-        emptyInputs =
-            Parser.InputState "" "" ""
     in
-        Model emptyInputs stateData False ""
-            |> withState stateData
+        { navCtx = Navigator.extractContext location
+        , inputs = Parser.unparse stateData
+        , stateData = stateData
+        , stateShareUrl = ""
+        , showHelp = False
+        }
+            |> updateShareUrl
             |> pairWithCmdNone
-
-
-withState : State.Data -> Model -> Model
-withState data model =
-    Model
-        (Parser.unparse data)
-        data
-        model.showHelp
-        (generateUrl data)
-
-
-generateUrl : State.Data -> String
-generateUrl data =
-    case
-        State.showAppFor data
-            |> Provider.storeInString
-    of
-        Err error ->
-            error
-
-        Ok url ->
-            -- TODO : Find current host name - Base URL.
-            "https://example.com/" ++ url
 
 
 pairWithCmdNone : Model -> ( Model, Cmd Msg )
@@ -144,28 +124,29 @@ update msg model =
 
 updateInputs : Model -> InputsSetter -> Model
 updateInputs model setter =
-    let
-        newInputs =
-            setter model.inputs
-
-        newUrl =
-            -- TODO : Make better validation:
-            makeShareUrl newInputs
-    in
-        { model
-            | inputs = newInputs
-            , shareUrl = newUrl
-        }
+    { model | inputs = (setter model.inputs) }
+        |> updateState
 
 
-makeShareUrl : Parser.InputState -> String
-makeShareUrl inputs =
-    case Parser.parse inputs of
-        Err errors ->
-            toString errors
-
+updateState : Model -> Model
+updateState model =
+    case Parser.parse model.inputs of
         Ok data ->
-            generateUrl data
+            { model | stateData = data }
+                |> updateShareUrl
+
+        Err errors ->
+            -- TODO : Make better validation:
+            { model | stateShareUrl = toString errors }
+
+
+updateShareUrl : Model -> Model
+updateShareUrl model =
+    let
+        url =
+            Navigator.makeShareableUrl model.navCtx model.stateData
+    in
+        { model | stateShareUrl = url }
 
 
 navigate : Location -> Msg
@@ -262,6 +243,6 @@ sectionFlow model =
 sectionUrl : Model -> Html Msg
 sectionUrl model =
     section [ class "section-url" ]
-        [ input [ readonly True, defaultValue model.shareUrl ] []
+        [ input [ readonly True, defaultValue model.stateShareUrl ] []
         , buttonFor TK_Flow_CopyUrl CopyUrl
         ]
