@@ -13,7 +13,7 @@ import Translations exposing (..)
 
 main : Program Never Model Msg
 main =
-    Navigation.program navigate
+    Navigation.program LoadApp
         { init = initializeModel
         , subscriptions = subscriptions
         , update = update
@@ -36,21 +36,14 @@ type alias Model =
 
 initializeModel : Location -> ( Model, Cmd Msg )
 initializeModel location =
-    let
-        context =
-            Navigator.getContext location
-
-        stateData =
-            loadAppData context location
-    in
-        { navCtx = Navigator.getContext location
-        , inputs = Parser.unparse stateData
-        , stateData = stateData
-        , stateShareUrl = ""
-        , showHelp = False
-        }
-            |> updateShareUrl
-            |> pairWithCmdNone
+    { navCtx = Navigator.getContext location
+    , inputs = Parser.InputState "" "" ""
+    , stateData = State.initialData
+    , stateShareUrl = ""
+    , showHelp = False
+    }
+        |> updateFrom location
+        |> pairWithCmdNone
 
 
 loadAppData : Navigator.Context -> Location -> State.Data
@@ -95,7 +88,8 @@ subscriptions model =
 
 
 type Msg
-    = Title String
+    = LoadApp Navigation.Location
+    | Title String
     | Interval String
     | Pages String
     | ShowHelp
@@ -113,6 +107,10 @@ type alias InputsSetter =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        LoadApp location ->
+            updateFrom location model
+                |> pairWithCmdNone
+
         Title txt ->
             (\inputs -> { inputs | title = txt })
                 |> updateInputs model
@@ -150,20 +148,21 @@ update msg model =
 
 updateInputs : Model -> InputsSetter -> Model
 updateInputs model setter =
-    { model | inputs = (setter model.inputs) }
-        |> updateState
+    let
+        updatedInputs =
+            setter model.inputs
 
+        updatedModel =
+            { model | inputs = updatedInputs }
+    in
+        case Parser.parse updatedInputs of
+            Ok parsedData ->
+                { updatedModel | stateData = parsedData }
+                    |> updateShareUrl
 
-updateState : Model -> Model
-updateState model =
-    case Parser.parse model.inputs of
-        Ok data ->
-            { model | stateData = data }
-                |> updateShareUrl
-
-        Err errors ->
-            -- TODO : Make better validation:
-            { model | stateShareUrl = toString errors }
+            Err errors ->
+                -- TODO : Make better validation:
+                { updatedModel | stateShareUrl = toString errors }
 
 
 updateShareUrl : Model -> Model
@@ -175,10 +174,17 @@ updateShareUrl model =
         { model | stateShareUrl = url }
 
 
-navigate : Location -> Msg
-navigate location =
-    -- TODO : Impement reaction to changes of Location
-    GoToEdit
+updateFrom : Navigation.Location -> Model -> Model
+updateFrom location model =
+    let
+        stateData =
+            loadAppData model.navCtx location
+    in
+        { model
+            | inputs = Parser.unparse stateData
+            , stateData = stateData
+        }
+            |> updateShareUrl
 
 
 
