@@ -37,10 +37,13 @@ type alias Model =
 initializeModel : Location -> ( Model, Cmd Msg )
 initializeModel location =
     let
+        context =
+            Navigator.getContext location
+
         stateData =
-            State.initialData
+            loadAppData context location
     in
-        { navCtx = Navigator.extractContext location
+        { navCtx = Navigator.getContext location
         , inputs = Parser.unparse stateData
         , stateData = stateData
         , stateShareUrl = ""
@@ -48,6 +51,29 @@ initializeModel location =
         }
             |> updateShareUrl
             |> pairWithCmdNone
+
+
+loadAppData : Navigator.Context -> Location -> State.Data
+loadAppData ctx location =
+    case
+        location
+            |> Navigator.extractState ctx
+    of
+        Ok ( _, Just data ) ->
+            -- TODO: Take care of State.Mode.
+            data
+
+        other ->
+            State.initialData
+                |> Debug.log
+                    -- TODO: Handle this in better way than just Log.
+                    ("Loading App from given Location ends with unexpected Result."
+                        ++ "\n  * Location: "
+                        ++ toString location.href
+                        ++ "\n  * Result: "
+                        ++ toString other
+                        ++ "\n\nReplacing with the default data"
+                    )
 
 
 pairWithCmdNone : Model -> ( Model, Cmd Msg )

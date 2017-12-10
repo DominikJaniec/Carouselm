@@ -61,7 +61,6 @@ fix app =
     case app of
         ( mode, Nothing ) ->
             initialApp
-                |> Debug.log ("Changed `" ++ toString mode ++ "` without any data to the initial app state")
 
         ( ModeInit, data ) ->
             ( ModeShow, data )

@@ -1,4 +1,11 @@
-module Navigator exposing (Context, extractContext, makeShareableUrl)
+module Navigator
+    exposing
+        ( Context
+        , ExtractError(..)
+        , extractState
+        , getContext
+        , makeShareableUrl
+        )
 
 import Navigation
 import State
@@ -10,8 +17,30 @@ type alias Context =
     }
 
 
-extractContext : Navigation.Location -> Context
-extractContext location =
+type ExtractError
+    = UnknownLocation
+    | ProviderError String
+
+
+extractState : Context -> Navigation.Location -> Result ExtractError State.App
+extractState ctx location =
+    let
+        extract maybeFragment =
+            case maybeFragment of
+                Nothing ->
+                    Ok State.initialApp
+
+                Just fragment ->
+                    Provider.loadFromString fragment
+                        |> Result.mapError ProviderError
+    in
+        extractHashFragment ctx location
+            |> Result.andThen extract
+            |> Result.map State.fix
+
+
+getContext : Navigation.Location -> Context
+getContext location =
     dropHashFragment location
         |> dropTrailingSlashes
         |> Context
@@ -27,6 +56,7 @@ makeShareableUrl ctx data =
             ctx.baseUrl ++ "/#" ++ urlFragment
 
         Err error ->
+            -- TODO: Make it not possible.
             "Should never happen, but: Err "
                 ++ error
                 |> Debug.crash
@@ -56,3 +86,22 @@ dropTrailingSlashes str =
         True ->
             String.dropRight 1 str
                 |> dropTrailingSlashes
+
+
+extractHashFragment : Context -> Navigation.Location -> Result ExtractError (Maybe String)
+extractHashFragment ctx location =
+    case
+        location.href
+            |> String.startsWith ctx.baseUrl
+    of
+        False ->
+            Err UnknownLocation
+
+        True ->
+            Ok <|
+                case String.uncons location.hash of
+                    Just ( '#', content ) ->
+                        Just content
+
+                    _ ->
+                        Nothing
