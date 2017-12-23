@@ -27,20 +27,22 @@ main =
 
 type alias Model =
     { navCtx : Navigator.Context
+    , previewStateData : State.Data
+    , showHelp : Bool
     , inputs : Parser.InputState
     , stateData : State.Data
     , stateShareUrl : String
-    , showHelp : Bool
     }
 
 
 initializeModel : Location -> ( Model, Cmd Msg )
 initializeModel location =
     { navCtx = Navigator.getContext location
+    , previewStateData = State.initialData
+    , showHelp = False
     , inputs = Parser.InputState "" "" ""
     , stateData = State.initialData
     , stateShareUrl = ""
-    , showHelp = False
     }
         |> updateFrom location
         |> pairWithCmdNone
@@ -131,7 +133,8 @@ update msg model =
                 |> pairWithCmdNone
 
         Preview ->
-            model |> pairWithCmdNone
+            { model | previewStateData = model.stateData }
+                |> pairWithCmdNone
 
         CopyUrl ->
             Debug.crash "Not yet implemented."
@@ -181,7 +184,8 @@ updateFrom location model =
             loadAppData model.navCtx location
     in
         { model
-            | inputs = Parser.unparse stateData
+            | previewStateData = stateData
+            , inputs = Parser.unparse stateData
             , stateData = stateData
         }
             |> updateShareUrl
