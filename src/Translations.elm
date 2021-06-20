@@ -1,4 +1,10 @@
-module Translations exposing (TraKey(..), translate, translateHelp)
+module Translations
+    exposing
+        ( TraKey(..)
+        , TraReplacement(..)
+        , translate
+        , translateHelp
+        )
 
 
 type TraKey
@@ -12,8 +18,15 @@ type TraKey
     | TK_Flow_Preview
     | TK_Flow_GoToShow
     | TK_Flow_CopyUrl
-    | TK_Show_Edit
     | TK_Show_About
+    | TK_Show_Edit
+    | TK_Show_Select__URL
+
+
+type alias TraReplacement =
+    { name : String
+    , text : String
+    }
 
 
 translate : TraKey -> String
@@ -49,11 +62,26 @@ translate key =
         TK_Flow_CopyUrl ->
             "Copy"
 
-        TK_Show_Edit ->
-            "Edit show"
-
         TK_Show_About ->
             "Carouselm: About"
+
+        TK_Show_Edit ->
+            "Edit this show"
+
+        TK_Show_Select__URL ->
+            "Show: {{URL}}"
+
+
+translateWith : TraKey -> List TraReplacement -> String
+translateWith key replaces =
+    let
+        replace text replacement =
+            text
+                |> String.split ("{{" + replacement.name + "}}")
+                |> String.join replacement.text
+    in
+        List.reverse replaces
+            |> List.foldl replace (translate key)
 
 
 translateHelp : TraKey -> Maybe String

@@ -28,6 +28,25 @@ iconButtonFor key cssClass msg =
         []
 
 
+indicatorButtonFor : String -> Bool -> msg -> Html Msg
+indicatorButtonFor url active msg =
+    let
+        cssClass =
+            " button-icon"
+
+        urlTitle =
+            translateWith TK_Show_Select__URL
+                [ TraReplacement "URL" url
+                ]
+    in
+        button
+            [ class <| cssClass
+            , title <| urlTitle
+            , onClicl msg
+            ]
+            []
+
+
 inputFor : TraKey -> String -> (String -> msg) -> String -> Html msg
 inputFor key vid msg init =
     div [ class "form-group group-input" ]

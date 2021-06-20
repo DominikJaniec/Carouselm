@@ -27,6 +27,7 @@ main =
 
 type alias Model =
     { navCtx : Navigator.Context
+    , previewCurrentIndex : Int
     , previewStateData : State.Data
     , showHelp : Bool
     , inputs : Parser.InputState
@@ -38,6 +39,7 @@ type alias Model =
 initializeModel : Location -> ( Model, Cmd Msg )
 initializeModel location =
     { navCtx = Navigator.getContext location
+    , previewCurrentIndex = 0
     , previewStateData = State.initialData
     , showHelp = False
     , inputs = Parser.InputState "" "" ""
@@ -226,8 +228,17 @@ sectionNavigator model =
 
 pageIndicators : Model -> List (Html Msg)
 pageIndicators model =
-    List.repeat 4 "(o)"
-        |> List.map (\e -> button [] [ text e ])
+    let
+        indicator index url =
+            case model.previewCurrentIndex == index of
+                True ->
+                    button [ title url ] [ text "◉" ]
+
+                _ ->
+                    button [ title url ] [ text "◎" ]
+    in
+        model.previewStateData.pages
+            |> List.indexedMap indicator
 
 
 sectionDisplay : Model -> Html Msg
